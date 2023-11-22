@@ -11,8 +11,8 @@ class PaymentController extends Controller {
     public function processPayment(Request $request, $price) {
         $user = User::find(1);
         $paymentMethod = $request->input('payment_method');
-        $user->createOrGetStripeCustomer();
-        $user->addPaymentMethod($paymentMethod);
+        //$user->createOrGetStripeCustomer();
+        //$user->addPaymentMethod($paymentMethod);
         try {
             $user->charge($price, $paymentMethod);
         } catch (\Exception $e) {

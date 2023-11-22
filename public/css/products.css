@@ -134,6 +134,7 @@
 	bottom: 0;
 	background-color: #fdf;
   }
+  
 
   .table-heading, .table-content {
 	width: 75%;
@@ -277,4 +278,12 @@
 
   .final-cart-total h3 {
 	color: Black;
+  }
+  
+  .pagination {
+	float: center;
+	clear: both;
+	width: 23%;
+	border-radius: 2%;
+	margin: 1%;
   }

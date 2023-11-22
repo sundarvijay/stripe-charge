@@ -12,8 +12,7 @@
 */
 
 
-Route::get('/', function () {
-    return view('products');
-});
-
+Route::get('/', ProductController::class .'@index')->name('products.index');
 Route::get('/products', ProductController::class .'@index')->name('products.index');
+Route::get('/products/{product}', ProductController::class .'@show')->name('products.show');
+Route::post('/payment/process-payment/{price}', PaymentController::class. '@processPayment')->name('payment.processPayment');

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Database\Seeder;
+use App\User;
 
 class DatabaseSeeder extends Seeder
 {
@@ -12,6 +13,11 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         // $this->call(UsersTableSeeder::class);
-         $this->call(ProductsTableSeeder::class);
+        $this->call(ProductsTableSeeder::class);
+         
+        $user = User::find(1);
+        if(!$user) {
+         $this->call(UsersTableSeeder::class);
+        }
     }
 }

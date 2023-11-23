@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title>Stripe Charge</title>
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+
         <!-- Fonts -->
         <link href="https://fonts.googleapis.com/css?family=Nunito:200,600" rel="stylesheet">
         <link href="{{ env('APP_URL') }}/css/cart.css" rel="stylesheet">
@@ -31,34 +31,36 @@
                 <p>{{$product->description}}</p>
 
                 <div class="quantity">
-                    QTY: <input type="number" value="1" min="1" id="qty">
+                    QTY: <input type="number" value="1" min="1">
                 </div>
                 
-                <div>
-                    <h2>Payment</h2>
-                    <form action="/payment/process-payment/{{$product->price}}" method="POST" id="subscribe-form" class="form-group">
-                        <input type="hidden" name="product" value=" {{$product->name}}">
+                
+                <form action="/payment/process-payment/{{$product->price}}" method="POST" id="subscribe-form">
+                    <div class="form-group">
                         <div class="row">
-                            <div class="col-md-6">
-                                <input id="card-holder-name" name="card-holder-name" placeholder="Name" type="text" value="" class="form-control">
-                                @csrf
-                            </div>
-                        </div> <br>
-                        <div class="row">
-                            <div class="col-md-10">
-                                <!-- Stripe Elements Placeholder -->
-                                <div id="card-element" class="form-control"></div>
-                            </div>
-                        </div> <br>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <button id="card-button" type="button">
-                                     Process Payment
-                                 </button>
+                            <div class="col-md-4">
+                                <div class="subscription-option">
+                                    <label for="plan-silver">
+                                        <span class="plan-price">${{$product->price}}</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
-                    </form>
-                </div>
+                    </div>
+                    <label for="card-holder-name">Card Holder Name</label>
+                    <input id="card-holder-name" type="text" value="">
+                    @csrf
+                    <div class="form-row">
+                        <label for="card-element">Credit or debit card</label>
+                        <div id="card-element" class="form-control">   </div>
+                        <!-- Used to display form errors. -->
+                        <div id="card-errors" role="alert"></div>
+                    </div>
+                    <div class="form-group text-center">
+                        <button type="button"  id="card-button" data-secret="{{ $intent->client_secret }}" class="btn btn-lg btn-success btn-block">SUBMIT</button>
+                    </div>
+                </form>
+
             </div>
         </section>
 
@@ -66,12 +68,9 @@
         <script src="{{ env('APP_URL') }}/js/cart.js"></script>
 
         <script src="https://js.stripe.com/v3/"></script>
- 
         <script>
-            const stripe = Stripe('{{env('STRIPE_KEY')}}');
-
-            const elements = stripe.elements();
-            
+            var stripe = Stripe('pk_test_WXxUiqrkKjNPNUZNIjV5MM2J004t0cmwiK');
+            var elements = stripe.elements();
             var style = {
                 base: {
                     color: '#32325d',
@@ -87,28 +86,37 @@
                     iconColor: '#fa755a'
                 }
             };
-            
-            const cardElement = elements.create('card', {hidePostalCode: true, style: style});
-
-            cardElement.mount('#card-element');
-            
-            const cardHolderName = document.getElementById('card-holder-name');
-            const cardButton = document.getElementById('card-button');
-
-            cardButton.addEventListener('click', async (e) => {
-                const { paymentMethod, error } = await stripe.createPaymentMethod(
-                    'card', cardElement, {
-                        billing_details: { name: cardHolderName.value }
-                    }
-                );
-
-                if (error) {
-                    // Display "error.message" to the user...
+            var card = elements.create('card', {hidePostalCode: true, style: style});
+            card.mount('#card-element');
+            console.log(document.getElementById('card-element'));
+            card.addEventListener('change', function (event) {
+                var displayError = document.getElementById('card-errors');
+                if (event.error) {
+                    displayError.textContent = event.error.message;
                 } else {
-                     paymentMethodHandler(paymentMethod.id);
+                    displayError.textContent = '';
                 }
             });
-            
+            const cardHolderName = document.getElementById('card-holder-name');
+            const cardButton = document.getElementById('card-button');
+            const clientSecret = cardButton.dataset.secret;
+            cardButton.addEventListener('click', async (e) => {
+                console.log("attempting");
+                const {setupIntent, error} = await stripe.confirmCardSetup(
+                        clientSecret, {
+                            payment_method: {
+                                card: card,
+                                billing_details: {name: cardHolderName.value}
+                            }
+                        }
+                );
+                if (error) {
+                    var errorElement = document.getElementById('card-errors');
+                    errorElement.textContent = error.message;
+                } else {
+                    paymentMethodHandler(setupIntent.payment_method);
+                }
+            });
             function paymentMethodHandler(payment_method) {
                 var form = document.getElementById('subscribe-form');
                 var hiddenInput = document.createElement('input');
@@ -116,13 +124,6 @@
                 hiddenInput.setAttribute('name', 'payment_method');
                 hiddenInput.setAttribute('value', payment_method);
                 form.appendChild(hiddenInput);
-                
-                var productName = document.createElement('input');
-                productName.setAttribute('type', 'hidden');
-                productName.setAttribute('name', 'qty');
-                productName.setAttribute('value', document.getElementById("qty").value);
-                form.appendChild(productName);
-                
                 form.submit();
             }
         </script>
